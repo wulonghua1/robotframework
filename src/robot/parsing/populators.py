@@ -28,12 +28,15 @@ from .htmlreader import HtmlReader
 from .tsvreader import TsvReader
 from .robotreader import RobotReader
 from .restreader import RestReader
-from .newparser.parser import NewParser
 
+_TxtReader = RobotReader
+if os.getenv('NEWPARSER') is not None:
+    from .newparser.parser import NewParser
+    _TxtReader = NewParser
 
 READERS = {'html': HtmlReader, 'htm': HtmlReader, 'xhtml': HtmlReader,
            'tsv': TsvReader , 'rst': RestReader, 'rest': RestReader,
-           'txt': NewParser, 'robot': NewParser}
+           'txt': _TxtReader, 'robot': _TxtReader}
 
 # Hook for external tools for altering ${CURDIR} processing
 PROCESS_CURDIR = True
