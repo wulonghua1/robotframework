@@ -29,11 +29,19 @@ def report_invalid_syntax(datafile, message, level='ERROR'):
     LOGGER.write("Error in file '%s': %s" % (path, message), level)
 
 
+def replace_curdirs_in(datafile, values):
+    if datafile.directory:
+        curdir = datafile.directory.replace('\\','\\\\')
+        old, new = '${CURDIR}', curdir
+        return [v if old not in v else v.replace(old, new) for v in values]
+
+
 def populate_settings(populator, section):
     settings = populator._datafile.setting_table
     settings.set_header('Settings')
     for name, values in setting_parser(section):
         key = name.lower()
+        values = replace_curdirs_in(populator._datafile, values)
         if key == 'resource':
             settings.add_resource(values[0])
         elif key == 'library':
@@ -65,22 +73,26 @@ def populate_variables(populator, section):
         datafile.variable_table.add(name, populator._replace_curdirs_in(values))
 
 
-def populate_tests(populator, section):
+def create_step(parent, step, datafile):
     from robot.parsing.model import ForLoop
+    assign, name, args = step[:3]
+    if name == ': FOR':
+        s = ForLoop(parent, replace_curdirs_in(datafile, args))
+        for forstep in step[3]:
+            fs = Step(forstep[0] or [], forstep[1], replace_curdirs_in(datafile, forstep[2]))
+            s.steps.append(fs)
+    else:
+        s = Step(assign or [], name, replace_curdirs_in(datafile, args))
+    return s
+
+
+def populate_tests(populator, section):
     datafile = populator._datafile
     datafile.testcase_table.set_header('Test cases')
     for name, settings, stepdata in testcase_parser(section):
         t = datafile.testcase_table.add(name)
         for step in stepdata:
-            assign, name, args = step[:3]
-            if name == ': FOR':
-                s = ForLoop(t, args)
-                for forstep in step[3]:
-                    fs = Step(forstep[0] or [], forstep[1], forstep[2])
-                    s.steps.append(fs)
-            else:
-                s = Step(assign or [], name, args)
-            t.steps.append(s)
+            t.steps.append(create_step(t, step, datafile))
         for name, value in settings:
             setting = {
                 'timeout': t.timeout,
@@ -101,15 +113,7 @@ def populate_kws(populator, section):
     for name, settings, stepdata in keyword_parser(section):
         k = datafile.keyword_table.add(name)
         for step in stepdata:
-            assign, name, args = step[:3]
-            if name == ': FOR':
-                s = ForLoop(k, args)
-                for forstep in step[3]:
-                    fs = Step(forstep[0] or [], forstep[1], forstep[2])
-                    s.steps.append(fs)
-            else:
-                s = Step(assign or [], name, args)
-            k.steps.append(s)
+            k.steps.append(create_step(k, step, datafile))
         for name, value in settings:
             setting = {
                 'arguments': k.args,
