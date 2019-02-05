@@ -82,12 +82,21 @@ def populate_tests(populator, section):
 
 
 def populate_kws(populator, section):
+    from robot.parsing.model import ForLoop
     datafile = populator._datafile
     datafile.keyword_table.set_header('Keywords')
     for name, settings, stepdata in keyword_parser(section):
         k = datafile.keyword_table.add(name)
-        for assign, name, args in stepdata:
-            k.steps.append(Step(assign or [], name, args))
+        for step in stepdata:
+            assign, name, args = step[:3]
+            if name == ': FOR':
+                s = ForLoop(k, args)
+                for forstep in step[3]:
+                    fs = Step(forstep[0] or [], forstep[1], forstep[2])
+                    s.steps.append(fs)
+            else:
+                s = Step(assign or [], name, args)
+            k.steps.append(s)
         for name, value in settings:
             setting = {
                 'arguments': k.args,
@@ -102,7 +111,7 @@ def populate_kws(populator, section):
 
 
 class NewParser(object):
-    
+
     def read(self, source, populator):
         data = Utf8Reader(source).read()
         sections = section_parser(data)

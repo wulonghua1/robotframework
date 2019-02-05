@@ -66,7 +66,7 @@ def p_section_data(p):
         p[0] = p[1] + '\n' + p[2]
 
 def p_error(e):
-    print("Parse error:" + e)
+    print("Parse error:",  e)
 
 parser = yacc.yacc()
 

@@ -4,5 +4,6 @@ def append_to_list_value(p):
         p[0] = [p[1]]
     else:
         value = p[1]
-        value.append(p[2])
+        if (p[2]) is not None:
+            value.append(p[2])
         p[0] = value
