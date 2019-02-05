@@ -127,28 +127,17 @@ Multiple settings
     Verify Teardown         Test case teardown
     Verify Timeout          12 seconds 345 milliseconds
 
-Deprecated setting format
-    Check Test Case    Invalid setting
-    ${path} =    Normalize Path    ${DATADIR}/parsing/test_case_settings.robot
-    ${message} =    Catenate
-    ...    Error in file '${path}':
-    ...    Invalid syntax in test case 'Invalid setting':
-    ...    Setting 'Doc U Ment ation' is deprecated. Use 'Documentation' instead.
-    Check Log Message    ${ERRORS}[1]    ${message}    WARN
+Settings are space-sensitive
+    Verify Invalid Setting    1    Doc U Ment ation    test=Invalid setting
+    Verify Documentation      test=Invalid setting
 
 Invalid setting
-    Check Test Case    ${TEST NAME}
-    ${path} =    Normalize Path    ${DATADIR}/parsing/test_case_settings.robot
-    ${message} =    Catenate
-    ...    Error in file '${path}':
-    ...    Invalid syntax in test case '${TEST NAME}':
-    ...    Non-existing setting 'Invalid'.
-    Check Log Message    ${ERRORS}[2]    ${message}    ERROR
+    Verify Invalid Setting    2    Invalid
 
 *** Keywords ***
 Verify Documentation
-    [Arguments]    @{doc}
-    ${tc} =    Check Test Case    ${TEST NAME}
+    [Arguments]    @{doc}    ${test}=${TEST NAME}
+    ${tc} =    Check Test Case    ${test}
     ${doc} =    Catenate    SEPARATOR=\n    @{doc}
     Should Be Equal    ${tc.doc}    ${doc}
 
@@ -172,3 +161,13 @@ Verify Timeout
     [Arguments]    ${timeout}
     ${tc} =    Check Test Case    ${TEST NAME}
     Should Be Equal    ${tc.timeout}    ${timeout}
+
+Verify Invalid Setting
+    [Arguments]    ${index}    ${setting}    ${test}=${TEST NAME}
+    Check Test Case    ${test}
+    ${path} =    Normalize Path    ${DATADIR}/parsing/test_case_settings.robot
+    ${message} =    Catenate
+    ...    Error in file '${path}':
+    ...    Invalid syntax in test case '${test}':
+    ...    Non-existing setting '${setting}'.
+    Check Log Message    ${ERRORS}[${index}]    ${message}    ERROR

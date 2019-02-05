@@ -7,8 +7,9 @@ Name
     ${tc} =    Check Test Case    Normal name
     Should Be Equal  ${tc.kws[0].name}    Normal name
     ${tc} =    Check Test Case    Names are not formatted
-    : FOR    ${kw}    IN    @{tc.kws}
-    \    Should Be Equal    ${kw.name}  user_keyword nameS _are_not_ FORmatted
+    FOR    ${kw}    IN    @{tc.kws}
+        Should Be Equal    ${kw.name}  user_keyword nameS _are_not_ FORmatted
+    END
 
 No documentation
     Verify Documentation    ${EMPTY}    test=Normal name
@@ -89,28 +90,12 @@ Multiple settings
     Verify Teardown   Teardown World
     Verify Timeout  6 minutes
 
-Deprecatted setting format
-    Check Test Case    Invalid setting
-    ${path} =    Normalize Path    ${DATADIR}/parsing/user_keyword_settings.robot
-    ${message} =    Catenate
-    ...    Error in file '${path}':
-    ...    Invalid syntax in keyword 'Invalid passing':
-    ...    Setting 'Doc U Ment ation' is deprecated. Use 'Documentation' instead.
-    Check Log Message    ${ERRORS}[1]    ${message}    WARN
+Settings are space-sensitive
+    Verify Invalid Setting    1    Doc U Ment ation    test=Invalid setting
 
 Invalid setting
-    Check Test Case    ${TEST NAME}
-    ${path} =    Normalize Path    ${DATADIR}/parsing/user_keyword_settings.robot
-    ${message} =    Catenate
-    ...    Error in file '${path}':
-    ...    Invalid syntax in keyword 'Invalid passing':
-    ...    Non-existing setting 'Invalid Setting'.
-    Check Log Message    ${ERRORS}[2]    ${message}    ERROR
-    ${message} =    Catenate
-    ...    Error in file '${path}':
-    ...    Invalid syntax in keyword 'Invalid failing':
-    ...    Non-existing setting 'invalid'.
-    Check Log Message    ${ERRORS}[3]    ${message}    ERROR
+    Verify Invalid Setting    2    Invalid Setting
+    Verify Invalid Setting    3    invalid             kw=Invalid failing
 
 *** Keywords ***
 Verify Documentation
@@ -128,3 +113,13 @@ Verify Timeout
     [Arguments]    ${timeout}
     ${tc} =    Check Test Case    ${TEST NAME}
     Should Be Equal    ${tc.kws[0].timeout}    ${timeout}
+
+Verify Invalid Setting
+    [Arguments]    ${index}    ${setting}    ${kw}=Invalid passing    ${test}=${TEST NAME}
+    Check Test Case    ${test}
+    ${path} =    Normalize Path    ${DATADIR}/parsing/user_keyword_settings.robot
+    ${message} =    Catenate
+    ...    Error in file '${path}':
+    ...    Invalid syntax in keyword '${kw}':
+    ...    Non-existing setting '${setting}'.
+    Check Log Message    ${ERRORS}[${index}]    ${message}    ERROR

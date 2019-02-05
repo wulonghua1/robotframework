@@ -3,7 +3,7 @@ Resource  ../core/resources.robot
 
 Metadata  Name  Value
 MetadatA  Multiple columns  Value in  multiple  columns
-Meta data  multiple lines  Value in  multiple lines  '\n\n'   and with
+Metadata  multiple lines  Value in  multiple lines  '\n\n'   and with
 ...  real newlines
 MetaData  variables  Version: ${version}
 Metadata  Variable from resource  ${resource_file_var}

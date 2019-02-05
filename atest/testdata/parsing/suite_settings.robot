@@ -8,8 +8,9 @@ Documentation    ${1}st line is shortdoc.
 ...  Escaping    (e.g. '\${non-existing}', 'c:\\temp', '\\n')    works too.
 
 Default Tags    \    default  # Empty tags should be ignored
-For CET ag S    f1    # This format deprecated since RF 3.1
+ForCE TagS      f1
 ...    F2
+For CET ag S    invalid    # Deprecated in RF 3.1, invalid since RF 3.2.
 Test Setup     Log  Default test setup
 Test Teardown  Log  Default test teardown  INFO
 Suite Setup       ${SUITE_FIXTURE_FROM_CLI}  ${default} suite setup  # Global variables work here
