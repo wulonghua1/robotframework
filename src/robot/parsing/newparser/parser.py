@@ -1,9 +1,14 @@
+import os
+
+from robot.output import LOGGER
 from robot.utils import Utf8Reader
+
 from .section_parser import section_parser
 from .setting_parser import setting_parser
 from .variable_parser import variable_parser
 from .testcase_parser import testcase_parser
 from .keyword_parser import keyword_parser
+
 
 class Step(object):
     def __init__(self, assign, name, args):
@@ -18,16 +23,22 @@ class Step(object):
         return False
 
 
+def report_invalid_syntax(datafile, message, level='ERROR'):
+    initfile = getattr(datafile, 'initfile', None)
+    path = os.path.join(datafile.source, initfile) if initfile else datafile.source
+    LOGGER.write("Error in file '%s': %s" % (path, message), level)
+
+
 def populate_settings(populator, section):
     settings = populator._datafile.setting_table
     settings.set_header('Settings')
     for name, values in setting_parser(section):
-        name = name.lower()
-        if name == 'resource':
+        key = name.lower()
+        if key == 'resource':
             settings.add_resource(values[0])
-        elif name == 'library':
+        elif key == 'library':
             settings.add_library(values[0], values[1:])
-        elif name == 'variables':
+        elif key == 'variables':
             settings.add_variables(values[0], values[1:])
         else:
             setting = {
@@ -40,9 +51,11 @@ def populate_settings(populator, section):
                 'default tags': settings.default_tags,
                 'test timeout': settings.test_timeout,
                 'test template': settings.test_template
-            }.get(name)
+            }.get(key)
             if setting is not None:
                 setting.populate(values)
+            else:
+                report_invalid_syntax(populator._datafile, "Non-existing setting '{}'.".format(name))
 
 
 def populate_variables(populator, section):
