@@ -6,8 +6,8 @@ from robot.utils import Utf8Reader
 from .section_parser import section_parser
 from .setting_parser import setting_parser
 from .variable_parser import variable_parser
-from .testcase_parser import testcase_parser
-from .keyword_parser import keyword_parser
+from .tcuktable_parser import tcuktable_parser
+from .context import TestCaseParsingContext, KeywordParsingContext
 
 
 class Step(object):
@@ -76,7 +76,7 @@ def populate_variables(populator, section):
 def create_step(parent, step, datafile):
     from robot.parsing.model import ForLoop
     assign, name, args = step[:3]
-    if name == ': FOR':
+    if name == 'FOR':
         s = ForLoop(parent, replace_curdirs_in(datafile, args))
         for forstep in step[3]:
             fs = Step(forstep[0] or [], forstep[1], replace_curdirs_in(datafile, forstep[2]))
@@ -89,7 +89,7 @@ def create_step(parent, step, datafile):
 def populate_tests(populator, section):
     datafile = populator._datafile
     datafile.testcase_table.set_header('Test cases')
-    for name, settings, stepdata in testcase_parser(section):
+    for name, settings, stepdata in tcuktable_parser(section, TestCaseParsingContext()):
         t = datafile.testcase_table.add(name)
         for step in stepdata:
             t.steps.append(create_step(t, step, datafile))
@@ -107,10 +107,9 @@ def populate_tests(populator, section):
 
 
 def populate_kws(populator, section):
-    from robot.parsing.model import ForLoop
     datafile = populator._datafile
     datafile.keyword_table.set_header('Keywords')
-    for name, settings, stepdata in keyword_parser(section):
+    for name, settings, stepdata in tcuktable_parser(section, KeywordParsingContext()):
         k = datafile.keyword_table.add(name)
         for step in stepdata:
             k.steps.append(create_step(k, step, datafile))

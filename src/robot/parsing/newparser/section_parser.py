@@ -8,10 +8,12 @@ tokens = (
     'DATA'
 )
 
-t_SETTING_HEADER = r'(?i)\*+\ ?settings?\ ?\**'
-t_VARIABLE_HEADER = r'(?i)\*+\ ?variables?\ ?\**'
-t_TEST_CASE_HEADER = r'(?i)\*+\ ?test\ cases?\ ?\**'
-t_KEYWORD_HEADER = r'(?i)\*+\ ?keywords?\ ?\**'
+SPACE_SEPARATED = r'^\*+\ ?{}?\ ?\**(\s*|\s\s.*)$'
+PIPE_SEPARATED = r'^\|\s+\*+\s?{}\s?\**.*$'
+t_SETTING_HEADER = r'(?im)({}|{})'.format(SPACE_SEPARATED.format('settings?'), PIPE_SEPARATED.format('settings'))
+t_VARIABLE_HEADER = r'(?im)({}|{})'.format(SPACE_SEPARATED.format('variables?'), PIPE_SEPARATED.format('variables'))
+t_TEST_CASE_HEADER = r'(?im)({}|{})'.format(SPACE_SEPARATED.format('test\ cases?'), PIPE_SEPARATED.format('test\ cases?'))
+t_KEYWORD_HEADER = r'(?im)({}|{})'.format(SPACE_SEPARATED.format('keywords?'), PIPE_SEPARATED.format('keywords?'))
 t_DATA = r'.+'
 
 t_ignore  = '\n'

@@ -1,65 +1,10 @@
-import re
-
 from .util import append_to_list_value
+
+from .tcukspacelexer import TOKENS
 
 
 class TCUKParser(object):
-    tokens = ('COMMENT', 'NAME', 'SEPARATOR', 'KEYWORD', 'ARGUMENT', 'FOR', 'CONTINUATION', 'ASSIGNMENT', 'SETTING', 'SETTING_VALUE', 'INDENT')
-
-    def t_error(self, t):
-        print(t)
-        print("TCUKparser illegal character '%s'" % t.value)
-        t.lexer.skip(1)
-
-    t_ignore = '\r?\n'
-
-    def t_COMMENT(self, t):
-        r'\#.*'
-        pass
-
-    def t_CONTINUATION(self, t):
-        r'(?m)^\ {2,}\.\.\.'
-        pass
-
-    def t_SETTING(self, t):
-        r'(?i)\[.*\]'
-        self._setting_seen = True
-        t.value = t.value[1:-1].lower()
-        return t
-
-    def t_INDENT(self, t):
-        r'\\'
-        return t
-
-    def t_NAME(self, t):
-        r'^(\S+\ )*\S+'
-        self._kw_seen = False
-        self._setting_seen = False
-        return t
-
-    def t_first_value(self, t):
-        r'(^\ {2,})(?!\.\.\.)'
-        self._kw_seen = False
-        self._setting_seen = False
-        self._in_for_loop = False
-
-    def t_value(self, t):
-        r'(\S+\ )*\S+'
-        if self._setting_seen:
-            t.type = 'SETTING_VALUE'
-        elif self._kw_seen or self._in_for_loop:
-            t.type = 'ARGUMENT'
-        elif re.match(r'[$@&]\{.+\}( ?=)?', t.value):
-            t.type = 'ASSIGNMENT'
-        elif t.value == ': FOR':
-            t.type = 'FOR'
-            self._in_for_loop = True
-        else:
-            t.type = 'KEYWORD'
-            self._kw_seen = True
-        return t
-
-    t_ignore_SEPARATOR = r'\ {2,}'
+    tokens = TOKENS
 
     def p_testcases(self, p):
         '''testcases : testcase
@@ -123,17 +68,17 @@ class TCUKParser(object):
             p[0] = ('step', p[1], p[2], p[3])
 
     def p_forloop(self, p):
-        '''forloop : FOR arguments foritems'''
-        p[0] = ('step', None, p[1], p[2], p[3])
+        '''forloop : FOR arguments foritems END'''
+        p[0] = ('step', None, 'FOR', p[2], p[3])
 
     def p_foritems(self, p):
-        '''foritems : INDENT step
-                    | foritems INDENT step
+        '''foritems : step
+                    | foritems step
         '''
-        if len(p) == 3:
-            p[0] = [p[2][1:]]
+        if len(p) == 2:
+            p[0] = [p[1][1:]]
         else:
-            p[1].append(p[3][1:])
+            p[1].append(p[2][1:])
             p[0] = p[1]
 
     def p_assignments(self, p):
