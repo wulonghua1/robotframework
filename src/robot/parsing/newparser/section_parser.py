@@ -33,6 +33,8 @@ def p_sections_section(p):
     else:
         sections = p[1]
         name, data = p[2]
+        if name in sections:
+            data = sections[name] + '\n' + data
         sections[name] = data
         p[0] = sections
 
