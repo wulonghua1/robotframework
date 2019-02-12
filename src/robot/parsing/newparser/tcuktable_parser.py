@@ -32,8 +32,14 @@ class TestCaseLexer(object):
             lexer.input(line)
             self.tokens.extend(list(lexer))
 
+    def _reset_for_loop_state(self):
+        self._in_for_loop = self._end_needed = self._next_must_be_end = False
+
     def token(self):
         if not self.tokens:
+            if self._end_needed:
+                self._reset_for_loop_state()
+                return T('END')
             return None
         t = self.tokens.pop(0)
         if t.type == 'FOR':
@@ -43,7 +49,7 @@ class TestCaseLexer(object):
         elif self._end_needed and t.type == 'INDENT':
             self._next_must_be_end = True
         elif self._next_must_be_end or (self._end_needed and t.type == 'NAME'):
-            self._in_for_loop = self._end_needed = self._next_must_be_end = False
+            self._reset_for_loop_state()
             if t.type != 'END':
                 self.tokens.insert(0, t)
                 t = T('END')
@@ -51,9 +57,11 @@ class TestCaseLexer(object):
             return self.token()
         return t
 
+
 class T(object):
-    def __init__(self, type_):
-        self.type = type_
+    def __init__(self, t):
+        self.type = t
+
 
 def tcuktable_parser(data, ctx):
     return TestCaseParser(TestCaseLexer(ctx)).parse(data)

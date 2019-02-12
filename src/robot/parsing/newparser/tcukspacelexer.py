@@ -1,14 +1,27 @@
 import re
 
-from .util import append_to_list_value
+TOKENS = (
+    'COMMENT',
+    'NAME',
+    'SEPARATOR',
+    'KEYWORD',
+    'ARGUMENT',
+    'FOR',
+    'CONTINUATION',
+    'ASSIGNMENT',
+    'SETTING',
+    'SETTING_VALUE',
+    'INDENT',
+    'END',
+    'FORINDENT',
+)
 
-TOKENS = ('COMMENT', 'NAME', 'SEPARATOR', 'KEYWORD', 'ARGUMENT', 'FOR', 'CONTINUATION', 'ASSIGNMENT', 'SETTING', 'SETTING_VALUE', 'INDENT', 'END', 'FORINDENT')
 
 class SpaceLexer(object):
     tokens = TOKENS
 
     def __init__(self, ctx):
-        self.ctx = ctx 
+        self.ctx = ctx
 
     def t_error(self, t):
         print(t)
@@ -57,7 +70,7 @@ class SpaceLexer(object):
         self.ctx.kw_seen = False
         self.ctx.setting_seen = False
         return t
-    
+
     def t_first_value(self, t):
         r'(^\ {2,})(?!\.\.\.)'
         self.ctx.kw_seen = False

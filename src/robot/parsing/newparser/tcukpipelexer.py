@@ -1,14 +1,13 @@
 import re
 
-from .util import append_to_list_value
+from .tcukspacelexer import TOKENS
 
-TOKENS = ('COMMENT', 'NAME', 'SEPARATOR', 'KEYWORD', 'ARGUMENT', 'FOR', 'CONTINUATION', 'ASSIGNMENT', 'SETTING', 'SETTING_VALUE', 'INDENT')
 
 class PipeLexer(object):
     tokens = TOKENS
 
     def __init__(self, ctx):
-        self.ctx = ctx 
+        self.ctx = ctx
 
     def t_error(self, t):
         print(t)
@@ -58,7 +57,7 @@ class PipeLexer(object):
             t.type = 'ARGUMENT'
         elif re.match(r'[$@&]\{.+\}( ?=)?', t.value):
             t.type = 'ASSIGNMENT'
-        elif t.value == ': FOR':
+        elif t.value.upper() == ': FOR' or t.value == 'FOR':
             t.type = 'FOR'
             self.ctx.in_for_loop_declaration = True
         else:

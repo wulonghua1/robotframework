@@ -29,7 +29,7 @@ class TCUKParser(object):
         else:
             p[0] = p[1]
             value = p[2]
-        
+
         if value[0] == 'setting':
             p[0][0].append(value[1:])
         else:
@@ -37,7 +37,7 @@ class TCUKParser(object):
 
     def p_body_item(self, p):
         '''body_item : forloop
-                     | setting 
+                     | setting
                      | step
         '''
         p[0] = p[1]
