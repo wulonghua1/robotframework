@@ -6,5 +6,9 @@ class ParsingContext(object):
         self.in_for_loop_declaration = False
 
 
-class TestCaseParsingContext(ParsingContext): pass
-class KeywordParsingContext(ParsingContext): pass
+class TestCaseParsingContext(ParsingContext):
+    pass
+
+
+class KeywordParsingContext(ParsingContext):
+    pass

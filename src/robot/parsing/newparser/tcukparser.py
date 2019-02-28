@@ -1,6 +1,6 @@
 from .util import append_to_list_value
 
-from .tcukspacelexer import TOKENS
+from .tcuklexer import TOKENS
 
 
 class TCUKParser(object):

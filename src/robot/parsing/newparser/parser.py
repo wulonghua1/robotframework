@@ -4,9 +4,7 @@ from robot.output import LOGGER
 from robot.utils import Utf8Reader
 
 from .section_parser import section_parser
-from .setting_parser import setting_parser
-from .variable_parser import variable_parser
-from .tcuktable_parser import tcuktable_parser
+from .tableparsers import parse_variabletable, parse_settingtable, parse_tcuktable
 from .context import TestCaseParsingContext, KeywordParsingContext
 
 
@@ -39,7 +37,7 @@ def replace_curdirs_in(datafile, values):
 def populate_settings(populator, section):
     settings = populator._datafile.setting_table
     settings.set_header('Settings')
-    for name, values in setting_parser(section):
+    for name, values in parse_settingtable(section):
         key = name.lower()
         values = replace_curdirs_in(populator._datafile, values)
         if key == 'resource':
@@ -69,7 +67,7 @@ def populate_settings(populator, section):
 def populate_variables(populator, section):
     datafile = populator._datafile
     datafile.variable_table.set_header('Variables')
-    for name, values in variable_parser(section):
+    for name, values in parse_variabletable(section):
         datafile.variable_table.add(name, populator._replace_curdirs_in(values))
 
 
@@ -89,7 +87,7 @@ def create_step(parent, step, datafile):
 def populate_tests(populator, section):
     datafile = populator._datafile
     datafile.testcase_table.set_header('Test cases')
-    for name, settings, stepdata in tcuktable_parser(section, TestCaseParsingContext()):
+    for name, settings, stepdata in parse_tcuktable(section, TestCaseParsingContext()):
         t = datafile.testcase_table.add(name)
         for step in stepdata:
             t.steps.append(create_step(t, step, datafile))
@@ -109,7 +107,7 @@ def populate_tests(populator, section):
 def populate_kws(populator, section):
     datafile = populator._datafile
     datafile.keyword_table.set_header('Keywords')
-    for name, settings, stepdata in tcuktable_parser(section, KeywordParsingContext()):
+    for name, settings, stepdata in parse_tcuktable(section, KeywordParsingContext()):
         k = datafile.keyword_table.add(name)
         for step in stepdata:
             k.steps.append(create_step(k, step, datafile))
