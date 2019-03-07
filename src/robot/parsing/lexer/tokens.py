@@ -15,11 +15,11 @@
 
 
 class Token(object):
-    SETTINGS_HEADER = 'SETTINGS_HEADER'
-    VARIABLES_HEADER = 'VARIABLES_HEADER'
-    TEST_CASES_HEADER = 'TEST_CASES_HEADER'
-    KEYWORDS_HEADER = 'KEYWORDS_HEADER'
-    COMMENTS_HEADER = 'COMMENTS_HEADER'
+    SETTING_HEADER = 'SETTING_HEADER'
+    VARIABLE_HEADER = 'VARIABLE_HEADER'
+    TESTCASE_HEADER = 'TESTCASE_HEADER'
+    KEYWORD_HEADER = 'KEYWORD_HEADER'
+    COMMENT_HEADER = 'COMMENT_HEADER'
 
     DOCUMENTATION = 'DOCUMENTATION'
     SUITE_SETUP = 'SUITE_SETUP'
@@ -78,3 +78,7 @@ class Token(object):
     def __repr__(self):
         return 'Token(%s, %r, %s, %s)' % (self.type, self.value,
                                           self.lineno, self.columnno)
+
+
+Token.DATA_TOKENS = [t for t in Token.__dict__
+                     if t[0] != '_' and t not in Token.NON_DATA_TOKENS]

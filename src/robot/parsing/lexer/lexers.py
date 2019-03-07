@@ -124,23 +124,23 @@ class SectionHeaderLexer(StatementLexer):
 
 
 class SettingSectionHeaderLexer(SectionHeaderLexer):
-    token_type = Token.SETTINGS_HEADER
+    token_type = Token.SETTING_HEADER
 
 
 class VariableSectionHeaderLexer(SectionHeaderLexer):
-    token_type = Token.VARIABLES_HEADER
+    token_type = Token.VARIABLE_HEADER
 
 
 class TestCaseSectionHeaderLexer(SectionHeaderLexer):
-    token_type = Token.TEST_CASES_HEADER
+    token_type = Token.TESTCASE_HEADER
 
 
 class KeywordSectionHeaderLexer(SectionHeaderLexer):
-    token_type = Token.KEYWORDS_HEADER
+    token_type = Token.KEYWORD_HEADER
 
 
 class CommentSectionHeaderLexer(SectionHeaderLexer):
-    token_type = Token.COMMENTS_HEADER
+    token_type = Token.COMMENT_HEADER
 
 
 class CommentSectionLexer(SectionLexer):

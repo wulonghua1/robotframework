@@ -41,7 +41,7 @@ class RobotFrameworkLexer(object):
         self.lexer.lex(TestCaseFileContext())
         if self._data_only:
             # TODO: Should whole statement be ignored if there's ERROR?
-            ignore = {Token.IGNORE, Token.COMMENTS_HEADER, Token.COMMENT,
+            ignore = {Token.IGNORE, Token.COMMENT_HEADER, Token.COMMENT,
                       Token.ERROR, Token.OLD_FOR_INDENT}
         else:
             ignore = {Token.IGNORE}
