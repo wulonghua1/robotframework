@@ -15,27 +15,55 @@
 
 
 class Token(object):
-    ERROR = 'ERROR'
-    SETTING = 'SETTING'
-    ARGUMENT = 'ARGUMENT'
-    KEYWORD = 'KEYWORD'
+    SETTINGS_HEADER = 'SETTINGS_HEADER'
+    VARIABLES_HEADER = 'VARIABLES_HEADER'
+    TEST_CASES_HEADER = 'TEST_CASES_HEADER'
+    KEYWORDS_HEADER = 'KEYWORDS_HEADER'
+    COMMENTS_HEADER = 'COMMENTS_HEADER'
+
+    DOCUMENTATION = 'DOCUMENTATION'
+    SUITE_SETUP = 'SUITE_SETUP'
+    SUITE_TEARDOWN = 'SUITE_TEARDOWN'
+    METADATA = 'METADATA'
+    TEST_SETUP = 'TEST_SETUP'
+    TEST_TEARDOWN = 'TEST_TEARDOWN'
+    TEST_TEMPLATE = 'TEST_TEMPLATE'
+    TEST_TIMEOUT = 'TEST_TIMEOUT'
+    FORCE_TAGS = 'FORCE_TAGS'
+    DEFAULT_TAGS = 'DEFAULT_TAGS'
+    LIBRARY = 'LIBRARY'
+    RESOURCE = 'RESOURCE'
+    VARIABLES = 'VARIABLES'
+    SETUP = 'SETUP'
+    TEARDOWN = 'TEARDOWN'
+    TEMPLATE = 'TEMPLATE'
+    TIMEOUT = 'TIMEOUT'
+    TAGS = 'TAGS'
+    ARGUMENTS = 'ARGUMENTS'
+    RETURN = 'RETURN'
+
     VARIABLE = 'VARIABLE'
-    COMMENT = 'COMMENT'
-    HEADER = 'HEADER'
-    IGNORE = 'IGNORE'
-    SEPARATOR = 'SEPARATOR'
+    ARGUMENT = 'ARGUMENT'
     NAME = 'NAME'
     ASSIGN = 'ASSIGN'
-    CONTINUATION = 'CONTINUATION'
+    KEYWORD = 'KEYWORD'
     FOR = 'FOR'
     FOR_SEPARATOR = 'FOR_SEPARATOR'
     OLD_FOR_INDENT = 'OLD_FOR_INDENT'
     END = 'END'
-    DATA = 'DATA'
+
+    SEPARATOR = 'SEPARATOR'
+    COMMENT = 'COMMENT'
+    CONTINUATION = 'CONTINUATION'
+    IGNORE = 'IGNORE'
     EOS = 'EOS'
+    ERROR = 'ERROR'
+    DATA = 'DATA'
+
     NON_DATA_TOKENS = {SEPARATOR, COMMENT, CONTINUATION, IGNORE}
 
-    __slots__ = ['type', 'value', 'lineno', 'columnno']
+    # TODO: Enable slots when we know what attributes ply needs.
+    #__slots__ = ['type', 'value', 'lineno', 'columnno']
 
     def __init__(self, type, value='', lineno=-1, columnno=-1):
         self.type = type

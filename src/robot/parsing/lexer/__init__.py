@@ -31,7 +31,7 @@ class RobotFrameworkLexer(object):
     def input(self, content):
         for statement in Splitter().split(content, data_only=self._data_only):
             self.statements.append(statement)
-            if data_only:
+            if self._data_only:
                 data = statement[:]
             else:
                 data = [t for t in statement if t.type == t.DATA]
@@ -41,10 +41,10 @@ class RobotFrameworkLexer(object):
         self.lexer.lex(TestCaseFileContext())
         if self._data_only:
             # TODO: Should whole statement be ignored if there's ERROR?
-            ignore = (Token.IGNORE, Token.COMMENT, Token.ERROR,
-                      Token.OLD_FOR_INDENT)
+            ignore = {Token.IGNORE, Token.COMMENTS_HEADER, Token.COMMENT,
+                      Token.ERROR, Token.OLD_FOR_INDENT}
         else:
-            ignore = (Token.IGNORE,)
+            ignore = {Token.IGNORE}
         for statement in self._handle_old_for(self.statements):
             for token in statement:
                 if token.type not in ignore:

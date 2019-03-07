@@ -13,6 +13,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from .tokens import Token
+
+
 class Settings(object):
     names = ()
     aliases = {}
@@ -21,18 +24,23 @@ class Settings(object):
     def __init__(self):
         self.settings = {n: False for n in self.names}
 
-    def validate(self, name):
+    def tokenize(self, statement):
+        name = self._format_name(statement[0].value)
         upper = name.upper()    # TODO: Non-ASCII spaces
         if upper in self.aliases:
             upper = self.aliases[upper]
+        # TODO: Error reporting
         if upper not in self.settings:
+            return Token.ERROR
             raise ValueError("Invalid setting '%s'." % name)  # TODO: Hints?
         if self.settings[upper] and upper not in self.multi_use:
+            return Token.ERROR
             raise ValueError("Setting '%s' allowed only once." % name)
         self.settings[upper] = True
+        return getattr(Token, upper.replace(' ', '_'))
 
-    def reset(self):
-        self.__init__()
+    def _format_name(self, name):
+        return name
 
 
 class TestCaseFileSettings(Settings):
@@ -98,8 +106,8 @@ class TestCaseSettings(Settings):
         Settings.__init__(self)
         self.parent = parent
 
-    def validate(self, name):
-        Settings.validate(self, name[1:-1].strip())
+    def _format_name(self, name):
+        return name[1:-1].strip()
 
     @property
     def template_set(self):
@@ -118,5 +126,5 @@ class KeywordSettings(Settings):
         'RETURN'
     )
 
-    def validate(self, name):
-        Settings.validate(self, name[1:-1].strip())
+    def _format_name(self, name):
+        return name[1:-1].strip()

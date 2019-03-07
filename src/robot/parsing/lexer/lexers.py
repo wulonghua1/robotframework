@@ -35,6 +35,7 @@ class Lexer(object):
 
 
 class StatementLexer(Lexer):
+    token_type = None
 
     def __init__(self, statement=None):
         self.statement = statement
@@ -44,6 +45,10 @@ class StatementLexer(Lexer):
 
     def input(self, statement):
         self.statement = statement
+
+    def lex(self, ctx):
+        for token in self.statement:
+            token.type = self.token_type
 
 
 class BlockLexer(Lexer):
@@ -117,16 +122,32 @@ class SectionHeaderLexer(StatementLexer):
     def handles(cls, statement):
         return statement[0].value.startswith('*')
 
-    def lex(self, ctx):
-        for token in self.statement:
-            token.type = Token.HEADER
+
+class SettingSectionHeaderLexer(SectionHeaderLexer):
+    token_type = Token.SETTINGS_HEADER
+
+
+class VariableSectionHeaderLexer(SectionHeaderLexer):
+    token_type = Token.VARIABLES_HEADER
+
+
+class TestCaseSectionHeaderLexer(SectionHeaderLexer):
+    token_type = Token.TEST_CASES_HEADER
+
+
+class KeywordSectionHeaderLexer(SectionHeaderLexer):
+    token_type = Token.KEYWORDS_HEADER
+
+
+class CommentSectionHeaderLexer(SectionHeaderLexer):
+    token_type = Token.COMMENTS_HEADER
 
 
 class CommentSectionLexer(SectionLexer):
     markers = ('Comment', 'Comments')
 
     def lexer_classes(self):
-        return (SectionHeaderLexer, CommentLexer)
+        return (CommentSectionHeaderLexer, CommentLexer)
 
 
 class ImplicitCommentSectionLexer(SectionLexer):
@@ -140,10 +161,7 @@ class ImplicitCommentSectionLexer(SectionLexer):
 
 
 class CommentLexer(StatementLexer):
-
-    def lex(self, ctx):
-        for token in self.statement:
-            token.type = Token.COMMENT
+    token_type = Token.COMMENT
 
 
 class ErrorSectionLexer(SectionLexer):
@@ -157,31 +175,20 @@ class ErrorSectionLexer(SectionLexer):
 
 
 class ErrorLexer(StatementLexer):
-
-    def lex(self, ctx):
-        for token in self.statement:
-            token.type = Token.ERROR
+    token_type = Token.ERROR
 
 
 class SettingSectionLexer(SectionLexer):
     markers = ('Setting', 'Settings')
 
     def lexer_classes(self):
-        return (SectionHeaderLexer, SettingLexer)
+        return (SettingSectionHeaderLexer, SettingLexer)
 
 
 class SettingLexer(StatementLexer):
 
     def lex(self, ctx):
-        name = self.statement[0]
-        try:
-            ctx.validate_setting(name.value)
-        except ValueError:
-            # TODO: Error reporting.
-            # TODO: Should all tokens be errors in this case?
-            name.type = Token.ERROR
-        else:
-            name.type = Token.SETTING
+        self.statement[0].type = ctx.tokenize_setting(self.statement)
         for token in self.statement[1:]:
             token.type = Token.ARGUMENT
 
@@ -190,7 +197,7 @@ class VariableSectionLexer(SectionLexer):
     markers = ('Variable', 'Variables')
 
     def lexer_classes(self):
-        return (SectionHeaderLexer, VariableLexer)
+        return (VariableSectionHeaderLexer, VariableLexer)
 
 
 class VariableLexer(StatementLexer):
@@ -206,14 +213,16 @@ class TestCaseSectionLexer(SectionLexer):
     markers = ('Test Case', 'Test Cases', 'Task', 'Tasks')
 
     def lexer_classes(self):
-        return (SectionHeaderLexer, TestCaseLexer, InvalidTestOrKeywordLexer)
+        return (TestCaseSectionHeaderLexer, TestCaseLexer,
+                InvalidTestOrKeywordLexer)
 
 
 class KeywordSectionLexer(SettingSectionLexer):
     markers = ('Keyword', 'Keywords')
 
     def lexer_classes(self):
-        return (SectionHeaderLexer, KeywordLexer, InvalidTestOrKeywordLexer)
+        return (KeywordSectionHeaderLexer, KeywordLexer,
+                InvalidTestOrKeywordLexer)
 
 
 class TestOrKeywordLexer(BlockLexer):

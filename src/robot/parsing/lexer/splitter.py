@@ -29,11 +29,14 @@ class Splitter(object):
         for lineno, line in enumerate(data.splitlines(not data_only), start=1):
             tokens = list(self._split_line(line, lineno, data_only))
             tokens, starts_new = self._cleanup_tokens(tokens, data_only)
-            if starts_new or current is None:
+            if starts_new:
+                if current is not None:
+                    yield current
                 current = tokens
-                yield current
             else:
                 current.extend(tokens)
+        if current is not None:
+            yield current
 
     def _split_line(self, line, lineno, data_only=False):
         if line[:1] != '|':
