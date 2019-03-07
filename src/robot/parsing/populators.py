@@ -31,8 +31,8 @@ from .restreader import RestReader
 
 _TxtReader = RobotReader
 if os.getenv('NEWPARSER') is not None:
-    from .newparser.parser import NewParser
-    _TxtReader = NewParser
+    from .newparser.builder import Builder
+    _TxtReader = Builder
 
 READERS = {'html': HtmlReader, 'htm': HtmlReader, 'xhtml': HtmlReader,
            'tsv': TsvReader , 'rst': RestReader, 'rest': RestReader,
