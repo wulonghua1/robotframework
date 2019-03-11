@@ -25,18 +25,17 @@ class Splitter(object):
     _trailing_whitespace = re.compile(r'\s+$', re.UNICODE)
 
     def split(self, data, data_only=False):
-        current = None
+        current = []
         for lineno, line in enumerate(data.splitlines(not data_only), start=1):
             tokens = list(self._split_line(line, lineno, data_only))
             tokens, starts_new = self._cleanup_tokens(tokens, data_only)
             if starts_new:
-                if current is not None:
+                if current:
                     yield current
                 current = tokens
             else:
                 current.extend(tokens)
-        if current is not None:
-            yield current
+        yield current
 
     def _split_line(self, line, lineno, data_only=False):
         if line[:1] != '|':
