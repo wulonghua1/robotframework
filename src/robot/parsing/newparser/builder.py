@@ -7,6 +7,7 @@ from robot.utils import Utf8Reader
 from robot.parsing.lexer import RobotFrameworkLexer
 
 from .parser import RobotFrameworkParser
+from .ast import KeywordCall, ForLoop
 
 
 class Step(object):
@@ -38,8 +39,9 @@ def replace_curdirs_in(datafile, values):
 def populate_settings(populator, section):
     settings = populator._datafile.setting_table
     settings.set_header('Settings')
-    for name, values in section:
-        key = name.lower()
+    for s in section.settings:
+        key = s.name.lower()
+        values = s.value
         values = replace_curdirs_in(populator._datafile, values)
         if key == 'resource':
             settings.add_resource(values[0])
@@ -62,69 +64,84 @@ def populate_settings(populator, section):
             if setting is not None:
                 setting.populate(values)
             else:
-                report_invalid_syntax(populator._datafile, "Non-existing setting '{}'.".format(name))
+                report_invalid_syntax(populator._datafile, "Non-existing setting '{}'.".format(s.name))
 
 
 def populate_variables(populator, section):
     datafile = populator._datafile
     datafile.variable_table.set_header('Variables')
-    for name, values in section:
-        datafile.variable_table.add(name, populator._replace_curdirs_in(values))
+    for var in section.variables:
+        datafile.variable_table.add(var.name, populator._replace_curdirs_in(var.value))
 
 
 def create_step(parent, step, datafile):
     from robot.parsing.model import ForLoop
-    assign, name, args = step[:3]
-    if name == 'FOR':
-        s = ForLoop(parent, replace_curdirs_in(datafile, args))
-        for forstep in step[3]:
-            fs = Step(forstep[0] or [], forstep[1], replace_curdirs_in(datafile, forstep[2]))
+    if type(step).__name__ == 'ForLoop':
+        s = ForLoop(parent, replace_curdirs_in(datafile, step.args))
+        for kw in step.keyword_calls:
+            fs = Step(kw.assign or [], kw.keyword, replace_curdirs_in(datafile, kw.args))
             s.steps.append(fs)
     else:
-        s = Step(assign or [], name, replace_curdirs_in(datafile, args))
+        s = Step(step.assign or [], step.keyword, replace_curdirs_in(datafile, step.args))
     return s
 
 
 def populate_tests(populator, section):
     datafile = populator._datafile
     datafile.testcase_table.set_header('Test cases')
-    for name, settings, stepdata in section:
-        t = datafile.testcase_table.add(name)
-        for step in stepdata:
-            t.steps.append(create_step(t, step, datafile))
-        for name, value in settings:
-            name = name[1:-1].lower()
-            setting = {
-                'timeout': t.timeout,
-                'documentation': t.doc,
-                'setup': t.setup,
-                'teardown': t.teardown,
-                'template': t.template,
-                'tags': t.tags
-            }.get(name.lower())
-            if setting is not None:
-                setting.populate(value)
+    for test in section.tests:
+        t = datafile.testcase_table.add(test.name)
+        for item in test.body:
+            if isinstance(item, KeywordCall):
+                t.steps.append(create_step(t, item, datafile))
+            elif isinstance(item, ForLoop):
+                t.steps.append(create_step(t, item, datafile))
+            else:
+                name = item.name[1:-1].lower()
+                setting = {
+                    'timeout': t.timeout,
+                    'documentation': t.doc,
+                    'setup': t.setup,
+                    'teardown': t.teardown,
+                    'template': t.template,
+                    'tags': t.tags
+                }[name]
+                setting.populate(item.value)
 
 
 def populate_kws(populator, section):
     datafile = populator._datafile
     datafile.keyword_table.set_header('Keywords')
-    for name, settings, stepdata in section:
-        k = datafile.keyword_table.add(name)
-        for step in stepdata:
-            k.steps.append(create_step(k, step, datafile))
-        for name, value in settings:
-            name = name[1:-1].lower()
-            setting = {
-                'arguments': k.args,
-                'return': k.return_,
-                'timeout': k.timeout,
-                'documentation': k.doc,
-                'teardown': k.teardown,
-                'tags': k.tags
-            }.get(name.lower())
-            if setting is not None:
-                setting.populate(value)
+    for kw in section.keywords:
+        k = datafile.keyword_table.add(kw.name)
+        for item in kw.body:
+            if isinstance(item, KeywordCall):
+                k.steps.append(create_step(k, item, datafile))
+            elif isinstance(item, ForLoop):
+                k.steps.append(create_step(k, item, datafile))
+            else:
+                name = item.name[1:-1].lower()
+                setting = {
+                    'arguments': k.args,
+                    'return': k.return_,
+                    'timeout': k.timeout,
+                    'documentation': k.doc,
+                    'teardown': k.teardown,
+                    'tags': k.tags
+                }.get(name)
+                setting.populate(item.value)
+
+
+import ast
+class V(ast.NodeVisitor):
+    def __init__(self):
+        self.depth = 0
+
+    def generic_visit(self, node):
+        print("\t" * self.depth + type(node).__name__)
+        self.depth += 1
+        ast.NodeVisitor.generic_visit(self, node)
+        self.depth -= 1
 
 
 class Builder(object):
@@ -132,16 +149,19 @@ class Builder(object):
     def read(self, source, populator):
         data = Utf8Reader(source).read()
         parser = yacc.yacc(module=RobotFrameworkParser())
-        sections = parser.parse(lexer=LexerWrapper(data))
-        for s in sections:
-            if s[0] == 'settings':
-                populate_settings(populator, s[1])
-            if s[0] == 'variables':
-                populate_variables(populator, s[1])
-            if s[0] == 'testcases':
-                populate_tests(populator, s[1])
-            if s[0] == 'keywords':
-                populate_kws(populator, s[1])
+        datafile = parser.parse(lexer=LexerWrapper(data))
+        V().visit(datafile)
+        print(ast.dump(datafile))
+        for s in datafile.sections:
+            if type(s).__name__ == 'SettingSection':
+                populate_settings(populator, s)
+            if type(s).__name__ == 'VariableSection':
+                populate_variables(populator, s)
+            if type(s).__name__ == 'TestCaseSection':
+                populate_tests(populator, s)
+            if type(s).__name__ == 'KeywordSection':
+                populate_kws(populator, s)
+        return datafile
 
 
 class LexerWrapper(object):
