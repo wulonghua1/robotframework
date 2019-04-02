@@ -15,12 +15,16 @@
 
 import copy
 import os.path
+import os
 
 from robot.output import LOGGER
 from robot.errors import FrameworkError
 from robot.utils import normpath, seq2str2, is_string
 
-from .builder import ResourceFileBuilder
+if os.getenv('NEWPARSER') is not None:
+    from .newbuilder import ResourceFileBuilder
+else:
+    from .builder import ResourceFileBuilder
 from .handlerstore import HandlerStore
 from .testlibraries import TestLibrary
 

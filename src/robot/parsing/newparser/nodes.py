@@ -96,6 +96,14 @@ class Setting(Node):
         self.value = value
 
 
+class ImportSetting(Node):
+    _fields = ('name', 'args')
+
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+
+
 class DocumentationSetting(Setting): pass
 class SuiteSetupSetting(Setting): pass
 class SuiteTeardownSetting(Setting): pass
@@ -106,9 +114,9 @@ class TestTemplateSetting(Setting): pass
 class TestTimeoutSetting(Setting): pass
 class ForceTagsSetting(Setting): pass
 class DefaultTagsSetting(Setting): pass
-class LibrarySetting(Setting): pass
-class ResourceSetting(Setting): pass
-class VariablesSetting(Setting): pass
+class LibrarySetting(ImportSetting): pass
+class ResourceSetting(ImportSetting): pass
+class VariablesSetting(ImportSetting): pass
 class SetupSetting(Setting): pass
 class TeardownSetting(Setting): pass
 class TemplateSetting(Setting): pass

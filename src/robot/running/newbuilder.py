@@ -2,7 +2,7 @@ import ast
 
 from robot.errors import DataError
 from robot.parsing.newparser.builder import Builder
-from robot.running.model import TestSuite, Keyword, ForLoop
+from robot.running.model import TestSuite, Keyword, ForLoop, ResourceFile
 from robot.utils import abspath
 from robot.variables import VariableIterator
 
@@ -43,6 +43,15 @@ class SettingsBuilder(ast.NodeVisitor):
     def visit_TestTemplateSetting(self, node):
         self.test_defaults.test_template = node.value
 
+    def visit_ResourceSetting(self, node):
+        self.suite.resource.imports.create(type='Resource', name=node.name, args=tuple(node.args))
+
+    def visit_LibrarySetting(self, node):
+        self.suite.resource.imports.create(type='Library', name=node.name, args=tuple(node.args))
+
+    def visit_VariablesSetting(self, node):
+        self.suite.resource.imports.create(type='Variables', name=node.name, args=tuple(node.args))
+
     def visit_VariableSection(self, node):
         pass
 
@@ -66,6 +75,26 @@ class SuiteBuilder(ast.NodeVisitor):
 
     def visit_Variable(self, node):
         self.suite.resource.variables.create(name=node.name, value=node.value)
+
+
+class ResourceBuilder(ast.NodeVisitor):
+    def __init__(self, resource):
+        self.resource = resource
+
+    def visit_ResourceSetting(self, node):
+        self.resource.imports.create(type='Resource', name=node.name, args=tuple(node.args))
+
+    def visit_LibrarySetting(self, node):
+        self.resource.imports.create(type='Library', name=node.name, args=tuple(node.args))
+
+    def visit_VariablesSetting(self, node):
+        self.resource.imports.create(type='Variables', name=node.name, args=tuple(node.args))
+
+    def visit_Keyword(self, node):
+        KeywordBuilder(self.resource).visit(node)
+
+    def visit_Variable(self, node):
+        self.resource.variables.create(name=node.name, value=node.value)
 
 
 class TestCaseBuilder(ast.NodeVisitor):
@@ -242,6 +271,15 @@ class TestSuiteBuilder(object):
 
     def _parse(self, path):
         try:
-            return Builder().read(abspath(path), None)
+            return Builder().read(abspath(path))
         except DataError as err:
             raise DataError("Parsing '%s' failed: %s" % (path, err.message))
+
+
+class ResourceFileBuilder(object):
+
+    def build(self, path):
+        resource = ResourceFile(source=path)
+        data = Builder().read(abspath(path))
+        ResourceBuilder(resource).visit(data)
+        return resource

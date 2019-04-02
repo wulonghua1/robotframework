@@ -105,15 +105,18 @@ class RobotFrameworkParser(object):
 
     def p_library(self, p):
         '''library_setting : LIBRARY arguments'''
-        p[0] = LibrarySetting(p[2])
+        name, args = parse_name_and_args(p)
+        p[0] = LibrarySetting(name, args)
 
     def p_resource(self, p):
         '''resource_setting : RESOURCE arguments'''
-        p[0] = ResourceSetting(p[2])
+        name, args = parse_name_and_args(p)
+        p[0] = ResourceSetting(name, args)
 
     def p_variables_import(self, p):
         '''variables_setting : VARIABLES arguments'''
-        p[0] = VariablesSetting(p[2])
+        name, args = parse_name_and_args(p)
+        p[0] = VariablesSetting(name, args)
 
     def p_setup(self, p):
         '''setup_setting : SETUP arguments'''
@@ -258,3 +261,10 @@ def append_to_list_value(p):
         if (p[2]) is not None:
             value.append(p[2])
         p[0] = value
+
+
+def parse_name_and_args(p):
+    if p[2]:
+        return p[2][0], p[2][1:]
+    else:
+        return '', []
