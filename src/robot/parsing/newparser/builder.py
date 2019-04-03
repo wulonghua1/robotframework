@@ -8,7 +8,7 @@ from .parser import RobotFrameworkParser
 
 class Builder(object):
 
-    def read(self, source, populator):
+    def read(self, source):
         data = Utf8Reader(source).read()
         parser = yacc.yacc(module=RobotFrameworkParser())
         return parser.parse(lexer=LexerWrapper(data))

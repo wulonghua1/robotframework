@@ -1,10 +1,15 @@
 import ast
+import os
 
 from robot.errors import DataError
+from robot.parsing import TEST_EXTENSIONS
 from robot.parsing.newparser.builder import Builder
+from robot.model import SuiteNamePatterns
 from robot.running.model import TestSuite, Keyword, ForLoop, ResourceFile
 from robot.utils import abspath
 from robot.variables import VariableIterator
+from robot.output import LOGGER
+from robot.utils import get_error_message, unic
 
 
 def create_fixture(data, type):
@@ -237,9 +242,10 @@ class TestSettings(object):
 
 
 class TestSuiteBuilder(object):
+    ignored_prefixes = ('_', '.')
+    ignored_dirs = ('CVS',)
 
-    def __init__(self, include_suites=None, warn_on_skipped='DEPRECATED',
-                 extension=None, rpa=None):
+    def __init__(self, include_suites=None, extension=None, rpa=None):
         self.rpa = rpa
 
     def build(self, *paths):
@@ -257,8 +263,25 @@ class TestSuiteBuilder(object):
         root.rpa = self.rpa
         return root
 
+    def _get_extensions(self, extension):
+        if not extension:
+            return None
+        extensions = set(ext.lower().lstrip('.') for ext in extension.split(':'))
+        if not all(ext in TEST_EXTENSIONS for ext in extensions):
+            raise DataError("Invalid extension to limit parsing '%s'." % extension)
+        return extensions
+
     def _parse_and_build(self, path):
-        suite = self._build_suite(self._parse(path))
+        if os.path.isdir(path):
+            init_file, children = self._get_children(path)
+            if init_file:
+                suite = self._build_suite(self._parse(init_file))
+            else:
+                suite = TestSuite()
+            for c in children:
+                suite.suites.append(self._parse_and_build(c))
+        else:
+            suite = self._build_suite(self._parse(path))
         suite.remove_empty_suites()
         return suite
 
@@ -274,6 +297,81 @@ class TestSuiteBuilder(object):
             return Builder().read(abspath(path))
         except DataError as err:
             raise DataError("Parsing '%s' failed: %s" % (path, err.message))
+
+    def _get_include_suites(self, path, incl_suites):
+        if not incl_suites:
+            return None
+        if not isinstance(incl_suites, SuiteNamePatterns):
+            incl_suites = SuiteNamePatterns(
+                self._create_included_suites(incl_suites))
+        # If a directory is included, also all its children should be included.
+        if self._is_in_included_suites(os.path.basename(path), incl_suites):
+            return None
+        return incl_suites
+
+    def _create_included_suites(self, incl_suites):
+        for suite in incl_suites:
+            yield suite
+            while '.' in suite:
+                suite = suite.split('.', 1)[1]
+                yield suite
+
+    def _get_children(self, dirpath, incl_extensions=None, incl_suites=None):
+        init_file = None
+        children = []
+        for path, is_init_file in self._list_dir(dirpath, incl_extensions,
+                                                 incl_suites):
+            if is_init_file:
+                if not init_file:
+                    init_file = path
+                else:
+                    LOGGER.error("Ignoring second test suite init file '%s'." % path)
+            else:
+                children.append(path)
+        return init_file, children
+
+    def _list_dir(self, dir_path, incl_extensions, incl_suites):
+        # os.listdir returns Unicode entries when path is Unicode
+        dir_path = unic(dir_path)
+        names = os.listdir(dir_path)
+        for name in sorted(names, key=lambda item: item.lower()):
+            name = unic(name)  # needed to handle nfc/nfd normalization on OSX
+            path = os.path.join(dir_path, name)
+            base, ext = os.path.splitext(name)
+            ext = ext[1:].lower()
+            if self._is_init_file(path, base, ext, incl_extensions):
+                yield path, True
+            elif self._is_included(path, base, ext, incl_extensions, incl_suites):
+                yield path, False
+            else:
+                LOGGER.info("Ignoring file or directory '%s'." % path)
+
+    def _is_init_file(self, path, base, ext, incl_extensions):
+        return (base.lower() == '__init__' and
+                self._extension_is_accepted(ext, incl_extensions) and
+                os.path.isfile(path))
+
+    def _extension_is_accepted(self, ext, incl_extensions):
+        if incl_extensions:
+            return ext in incl_extensions
+        return ext in TEST_EXTENSIONS
+
+    def _is_included(self, path, base, ext, incl_extensions, incl_suites):
+        if base.startswith(self.ignored_prefixes):
+            return False
+        if os.path.isdir(path):
+            return base not in self.ignored_dirs or ext
+        if not self._extension_is_accepted(ext, incl_extensions):
+            return False
+        return self._is_in_included_suites(base, incl_suites)
+
+    def _is_in_included_suites(self, name, incl_suites):
+        if not incl_suites:
+            return True
+        return incl_suites.match(self._split_prefix(name))
+
+    def _split_prefix(self, name):
+        return name.split('__', 1)[-1]
 
 
 class ResourceFileBuilder(object):
