@@ -24,6 +24,9 @@ class SettingsBuilder(ast.NodeVisitor):
     def visit_DocumentationSetting(self, node):
         self.suite.doc = "\n".join(node.value)
 
+    def visit_MetadataSetting(self, node):
+        self.suite.metadata[node.name] = ' '.join(node.value)
+
     def visit_SuiteSetupSetting(self, node):
         self.suite.keywords.append(create_fixture(node.value, 'setup'))
 
@@ -275,18 +278,19 @@ class TestSuiteBuilder(object):
         if os.path.isdir(path):
             init_file, children = self._get_children(path)
             if init_file:
-                suite = self._build_suite(self._parse(init_file))
+                suite = self._build_suite(init_file)
             else:
-                suite = TestSuite()
+                suite = TestSuite(name=format_name(path), source=path)
             for c in children:
                 suite.suites.append(self._parse_and_build(c))
         else:
-            suite = self._build_suite(self._parse(path))
+            suite = self._build_suite(path)
         suite.remove_empty_suites()
         return suite
 
-    def _build_suite(self, data, parent_defaults=None):
-        suite = TestSuite()
+    def _build_suite(self, source, parent_defaults=None):
+        data = self._parse(source)
+        suite = TestSuite(name=format_name(source), source=source)
         defaults = TestDefaults()
         SettingsBuilder(suite, defaults).visit(data)
         SuiteBuilder(suite, defaults).visit(data)
@@ -381,3 +385,16 @@ class ResourceFileBuilder(object):
         data = Builder().read(abspath(path))
         ResourceBuilder(resource).visit(data)
         return resource
+
+
+def format_name(source):
+    def strip_possible_prefix_from_name(name):
+        return name.split('__', 1)[-1]
+
+    def format_name(name):
+        name = strip_possible_prefix_from_name(name)
+        name = name.replace('_', ' ').strip()
+        return name.title() if name.islower() else name
+
+    basename = os.path.splitext(os.path.basename(source))[0]
+    return format_name(basename)

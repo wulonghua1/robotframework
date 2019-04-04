@@ -77,7 +77,7 @@ class RobotFrameworkParser(object):
 
     def p_metadata(self, p):
         '''metadata_setting : METADATA arguments'''
-        p[0] = MetadataSetting(p[2])
+        p[0] = MetadataSetting(p[2][0], p[2][1:])
 
     def p_test_setup(self, p):
         '''test_setup_setting : TEST_SETUP arguments'''

@@ -104,10 +104,17 @@ class ImportSetting(Node):
         self.args = args
 
 
+class MetadataSetting(Node):
+    _fields = ('name', 'value')
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+
 class DocumentationSetting(Setting): pass
 class SuiteSetupSetting(Setting): pass
 class SuiteTeardownSetting(Setting): pass
-class MetadataSetting(Setting): pass
 class TestSetupSetting(Setting): pass
 class TestTeardownSetting(Setting): pass
 class TestTemplateSetting(Setting): pass
