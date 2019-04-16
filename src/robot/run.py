@@ -43,7 +43,7 @@ from robot.output import LOGGER, pyloggingconf
 from robot.reporting import ResultWriter
 from robot.running import TestSuiteBuilder
 from robot.utils import Application, unic, text
-
+from xml.dom import minidom
 
 USAGE = """Robot Framework -- A generic test automation framework
 
@@ -92,6 +92,7 @@ Options
                           terminology so that "test" is replaced with "task"
                           in logs and reports. By default the mode is got
                           from test/task header in data files. New in RF 3.1.
+ -Q --retry retry   ¡¡  ¡¡Set the retry times if test failed.
  -F --extension value     Parse only files with this extension when executing
                           a directory. Has no effect when running individual
                           files or when using resource files. If more than one
@@ -439,9 +440,9 @@ class RobotFramework(Application):
                 result = suite.run(settings)
             finally:
                 text.MAX_ERROR_LINES = old_max_error_lines
-            print("sss")
             LOGGER.info("Tests execution ended. Statistics:\n%s"
                         % result.suite.stat_message)
+            self._make(settings.output)
             if settings.log or settings.report or settings.xunit:
                 writer = ResultWriter(settings.output if settings.log
                                       else result)
@@ -455,6 +456,45 @@ class RobotFramework(Application):
         return dict((name, value) for name, value in options.items()
                     if value not in (None, []))
 
+    def _make(self, outxml):
+        LOGGER.info("IN _make")
+        xmldoc = minidom.parse(outxml)
+        suiteElementList = xmldoc.getElementsByTagName('suite')
+        mySuite = []
+        for suiteElement in suiteElementList:
+            if suiteElement.childNodes is not None:
+                for element in suiteElement.childNodes:
+                    if element.nodeName == 'test':
+                        mySuite.append(suiteElement)
+                        break
+        for suite in mySuite:
+            testElements = {}
+            for element in suite.childNodes:
+                if element.nodeName == 'test':
+                    name = element.getAttribute('name')
+                    if testElements.get(name) == None:
+                        testElements.update({name: [element]})
+                    else:
+                        testElements.get(name).append(element)
+            for n, el in testElements.items():
+                LOGGER.info(len(el))
+                if el[-1] == el[0]:
+                    continue
+                else:
+                    last_status = list(set(el[-1].getElementsByTagName("status")).intersection(set(el[-1].childNodes)))[0]
+                    if last_status.getAttribute('status') == "PASS":
+                       for i in el[0:-1]:
+                          textElement = i.nextSibling
+                          suite.removeChild(i)
+                          suite.removeChild(textElement)
+                    else:
+                        for i in el[1:]:
+                            textElement = i.nextSibling
+                            suite.removeChild(i)
+                            suite.removeChild(textElement)
+        savefile = open(outxml, 'w', encoding='UTF-8')
+        xmldoc.writexml(savefile, encoding='UTF-8')
+        savefile.close()
 
 def run_cli(arguments=None, exit=True):
     """Command line execution entry point for running tests.

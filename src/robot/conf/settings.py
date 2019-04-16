@@ -406,6 +406,7 @@ class RobotSettings(_BaseSettings):
                        'SkipTeardownOnExit' : ('skipteardownonexit', False),
                        'Randomize'          : ('randomize', 'NONE'),
                        'RunEmptySuite'      : ('runemptysuite', False),
+                       'Retry'              : ('retry',3),
                        'WarnOnSkipped'      : ('warnonskippedfiles', None),
                        'Variables'          : ('variable', []),
                        'VariableFiles'      : ('variablefile', []),
