@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ma#!/usr/bin/env python
 
 #  Copyright 2008-2015 Nokia Networks
 #  Copyright 2016-     Robot Framework Foundation
@@ -439,6 +439,7 @@ class RobotFramework(Application):
                 result = suite.run(settings)
             finally:
                 text.MAX_ERROR_LINES = old_max_error_lines
+            print("sss")
             LOGGER.info("Tests execution ended. Statistics:\n%s"
                         % result.suite.stat_message)
             if settings.log or settings.report or settings.xunit:
